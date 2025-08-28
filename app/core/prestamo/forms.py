@@ -4,6 +4,7 @@ from django.forms import ModelForm
 from core.base.forms import readonly_fields
 from core.base.models import Parametro, RefDet
 from core.base.utils import get_fecha_actual_ymd
+from core.general.models import Banco, CuentaBanco
 
 from .models import *
 
@@ -126,8 +127,28 @@ class Trx501Form(forms.Form):
             }
         ),
     )
-    banco = forms.CharField(required=False)
-    nro_cuenta_banco = forms.CharField(required=False)
+    banco = forms.ModelChoiceField(
+        queryset=Banco.objects.filter(activo=True),
+        empty_label="(Todos)",
+        required=True,
+        # widget=forms.Select(attrs={"class": "form-control select2", "disabled": True}),
+        widget=forms.Select(
+            attrs={
+                "class": "form-control select2",
+            }
+        ),
+    )
+    nro_cuenta_banco = forms.ModelChoiceField(
+        queryset=CuentaBanco.objects.filter(activo=True),
+        empty_label="(Todos)",
+        required=True,
+        # widget=forms.Select(attrs={"class": "form-control select2", "disabled": True}),
+        widget=forms.Select(
+            attrs={
+                "class": "form-control select2",
+            }
+        ),
+    )
 
 # *TRX 503
 class Trx503Form(forms.Form):
