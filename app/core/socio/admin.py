@@ -22,7 +22,7 @@ class ObligacionCuentaAdmin(ModeloAdminBase):
 
 
 # Register your models here.
-# admin.site.register(SolicitudIngreso, ModeloAdminBase)
-# admin.site.register(PromocionIngreso, ModeloAdminBase)
-# admin.site.register(TipoCuenta, ModeloAdminBase)
-# admin.site.register(ObligacionCuenta, ObligacionCuentaAdmin)
+admin.site.register(SolicitudIngreso, ModeloAdminBase)
+admin.site.register(PromocionIngreso, ModeloAdminBase)
+admin.site.register(TipoCuenta, ModeloAdminBase)
+admin.site.register(ObligacionCuenta, ObligacionCuentaAdmin)
