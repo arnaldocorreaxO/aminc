@@ -110,10 +110,10 @@ def sp_trx700(request, *args, **kwargs):
                         ,@IMPORTE_CHEQUE=0
                         ,@MENSAJE=@MENSAJE OUTPUT;
 
-                        IF @RC<>0 
+                        /*IF @RC<>0 
                         ROLLBACK TRAN
                         ELSE
-                        COMMIT TRAN                        
+                        COMMIT TRAN*/                        
 
                         SELECT @RC AS RTN, @MENSAJE AS MSG, @MENSAJE AS VAL;
                     """
