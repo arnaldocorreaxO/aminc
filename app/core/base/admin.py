@@ -53,10 +53,19 @@ class RefDetAdmin(ModeloAdminBase):
     search_fields = ("refcab__denominacion",)
     list_filter = ("refcab",)
 
+class RefDetAdmin2(ModeloAdminBase):
+    list_display = [
+        "cod_referencia",
+    ] + _list_display
+    search_fields = ("refcab__denominacion",)
+    list_filter = ("refcab",)
+
 
 # REGISTRO DE MODELOS
+# admin.site.register(RefCab2, ModeloAdminBase)
+# admin.site.register(RefDet2, RefDetAdmin)
 admin.site.register(RefCab, ModeloAdminBase)
-admin.site.register(RefDet, RefDetAdmin)
+admin.site.register(RefDet, RefDetAdmin2)
 admin.site.register(Parametro, ParametroAdmin)
 admin.site.register(Meses, ModeloAdminBase)
 admin.site.register(Modulo, ModeloAdminBase)

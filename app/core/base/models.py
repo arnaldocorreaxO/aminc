@@ -10,17 +10,16 @@ from config import settings as setting
 from core.base.choices import *
 from core.base.utils import calculate_age
 
-
 # Create your models here.
 """REFERENCIA CABECERA"""
 class RefCab(ModeloBase):
-    cod = models.CharField(
-        verbose_name="Codigo", db_column="cod", max_length=20, unique=True
+    cod_referencia = models.CharField(
+        verbose_name="Codigo Referencia", max_length=100,null=True,blank=True
     )
     denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
 
     def __str__(self):
-        return "{} - {}".format(self.cod, self.denominacion)
+        return "{} - {}".format(self.cod_referencia, self.denominacion)
 
     class Meta:
         # ordering = ['tip_movimiento',]
@@ -37,20 +36,77 @@ class RefDet(ModeloBase):
         on_delete=models.RESTRICT,
         related_name="referencia",
     )
-    cod = models.CharField(
-        verbose_name="Codigo", db_column="cod", max_length=20, unique=True
+    cod_referencia = models.CharField(
+        verbose_name="Codigo Referencia", max_length=100,null=True,blank=True
     )
-    denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
+    denominacion = models.CharField(verbose_name="Denominacion", max_length=50) #Nombre Referencia
+    descripcion = models.CharField(verbose_name="Descripción", max_length=50,null=True,blank=True)#Descripcion Referencia
+    valor_alfanumerico = models.CharField(verbose_name="Valor Alfanumerico", max_length=100, null=True, blank=True)
+    valor_numerico = models.DecimalField(verbose_name="Valor Numérico", max_digits=18, decimal_places=4, null=True, blank=True)   
+    valor_fecha = models.DateField(verbose_name="Valor Fecha", null=True, blank=True)
+    valor_unico = models.CharField(verbose_name="Valor Único", max_length=25,unique=True,null=True) # Valor unico para relacionar en otras tablas
 
     def __str__(self):
         return self.denominacion or ""
+
+    # Generar valor unico automatico si no se ingresa
+    def save(self, *args, **kwargs):
+        if not self.valor_unico:
+            # Guardar primero para obtener el ID
+            super().save(*args, **kwargs)
+            self.valor_unico = str(self.id)
+            # Guardar solo el campo actualizado
+            super().save(update_fields=["valor_unico"])
+        else:
+            super().save(*args, **kwargs)
 
     class Meta:
         # ordering = ['tip_movimiento',]
         db_table = "bs_refdet"
         verbose_name = "Referencia Detalle"
         verbose_name_plural = "Referencias Detalle"
-        unique_together = ["refcab", "cod"]
+        unique_together = ["refcab", "valor_unico"]
+
+# # Create your models here.
+# """REFERENCIA CABECERA"""
+# class RefCab2(ModeloBase):
+#     cod = models.CharField(
+#         verbose_name="Codigo", db_column="cod", max_length=20, unique=True,null=True,blank=True
+#     )
+#     denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
+
+#     def __str__(self):
+#         return "{} - {}".format(self.cod, self.denominacion)
+
+#     class Meta:
+#         # ordering = ['tip_movimiento',]
+#         db_table = "bs_refcabx"
+#         verbose_name = "Referencia Cabecera"
+#         verbose_name_plural = "Referencias Cabecera"
+
+
+# """REFERENCIA DETALLE"""
+# class RefDet2(ModeloBase):
+#     refcab = models.ForeignKey(
+#         RefCab2,
+#         verbose_name="Referencia Cabecera",
+#         on_delete=models.RESTRICT,
+#         related_name="referencia",
+#     )
+#     cod = models.CharField(
+#         verbose_name="Codigo", db_column="cod", max_length=20, unique=True,null=True,blank=True
+#     )
+#     denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
+
+#     def __str__(self):
+#         return self.denominacion or ""
+
+#     class Meta:
+#         # ordering = ['tip_movimiento',]
+#         db_table = "bs_refdetx"
+#         verbose_name = "Referencia Detalle"
+#         verbose_name_plural = "Referencias Detalle"
+#         unique_together = ["refcab", "cod"]
 
 
 """MESES"""
@@ -78,7 +134,7 @@ class Modulo(ModeloBase):
     denominacion = models.CharField(max_length=100, unique=True)
     tipo_cartera = models.ForeignKey(
         RefDet,
-        to_field="cod",
+        to_field="valor_unico",
         limit_choices_to={"refcab_id": 12},
         db_column="tipo_cartera",
         on_delete=models.RESTRICT,
@@ -573,7 +629,7 @@ class Persona(ModeloBase):
     fec_nacimiento = models.DateField(verbose_name="Fecha Nacimiento", null=True)
     sexo = models.ForeignKey(
         RefDet,
-        to_field="cod",
+        to_field="valor_unico",
         verbose_name="Genero",
         db_column="sexo",
         on_delete=models.RESTRICT,
@@ -584,7 +640,7 @@ class Persona(ModeloBase):
     )
     estado_civil = models.ForeignKey(
         RefDet,
-        to_field="cod",
+        to_field="valor_unico",
         verbose_name="Estado Civil",
         db_column="estado_civil",
         on_delete=models.RESTRICT,
@@ -749,7 +805,7 @@ class MovimientoBase(ModeloBase):
     # Compensaciones de Cheques
     cod_compensacion = models.ForeignKey(
         RefDet,
-        to_field="cod",
+        to_field="valor_unico",
         limit_choices_to={"refcab_id": 11},
         db_column="cod_compensacion",
         on_delete=models.RESTRICT,

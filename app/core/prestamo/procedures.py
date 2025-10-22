@@ -21,7 +21,7 @@ def sp_alta_solicitud_prestamo(request):
     params["fec_1er_vencimiento"] = TEXTO(request.POST["fec_1er_vencimiento"])
     params["total_interes"] = request.POST["total_interes"]
     params["monto_neto"] = request.POST["monto_neto"]
-    params["usu_actual"] = request.user.id
+    params["usu_actual"] = cod_usuario
     params["forma_desembolso"] = TEXTO(request.POST["forma_desembolso"])
     params["monto_refinanciado"] = request.POST["monto_refinanciado"]
 
@@ -129,6 +129,7 @@ def sp_alta_solicitud_prestamo(request):
 def sp_generar_proforma_cuota(request):
     print(request.POST)
     params = {}
+    cod_usuario = request.user.cod_usuario
     params["sucursal"] = request.POST["sucursal"]
     params["fec_solicitud"] = TEXTO(request.POST["fec_solicitud"])
     params["nro_solicitud"] = TEXTO(request.POST["nro_solicitud"])
@@ -143,7 +144,7 @@ def sp_generar_proforma_cuota(request):
     params["fec_1er_vencimiento"] = TEXTO(request.POST["fec_1er_vencimiento"])
     params["total_interes"] = RESET_FORMATO(request.POST["total_interes"])
     params["monto_neto"] = RESET_FORMATO(request.POST["monto_neto"])
-    params["usu_actual"] = request.user.id
+    params["usu_actual"] = cod_usuario
     params["monto_refinanciado"] = RESET_FORMATO(request.POST["monto_refinanciado"])
 
     print(params)
@@ -159,7 +160,7 @@ def sp_generar_proforma_cuota(request):
                     DECLARE @MONTO_SOLICITADO NUMERIC(14,2)
                     DECLARE @MONTO_NETO NUMERIC(14,2)
                     DECLARE @MONTO_CUOTA NUMERIC(14,2)
-                    DECLARE @USUARIO_ID INT
+                    DECLARE @COD_USUARIO CHAR(4)
                     DECLARE @MENSAJE VARCHAR(100)
 
                     -- TODO: Establezca los valores de los parámetros aquí.
@@ -176,7 +177,7 @@ def sp_generar_proforma_cuota(request):
                     ,@MONTO_PRESTAMO={params['monto_prestamo']}
                     ,@MONTO_SOLICITADO={params['monto_solicitado']}
                     ,@MONTO_NETO={params['monto_neto']}
-                    ,@USUARIO_ID={params['usu_actual']}
+                    ,@COD_USUARIO={params['usu_actual']}
                     ,@MONTO_CUOTA = @MONTO_CUOTA OUTPUT
                     ,@MENSAJE=@MENSAJE OUTPUT
                     

@@ -282,7 +282,7 @@ def generar_proforma_cuota(request):
         # print(nro_solicitud)
         # print("*" * 100)
         search = ProformaCuota.objects.filter(
-            Q(solicitud_prestamo=nro_solicitud) & Q(usu_insercion=request.user.id)
+            Q(solicitud_prestamo=nro_solicitud) & Q(usu_insercion=request.user.cod_usuario)
         )
         total_interes = 0
         monto_prestamo = 0

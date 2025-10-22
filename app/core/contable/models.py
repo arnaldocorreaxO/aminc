@@ -389,7 +389,7 @@ class OperativaContable(ModeloBase):
     )
     plazo = models.ForeignKey(
         RefDet,
-        to_field="cod",
+        to_field="valor_unico",
         limit_choices_to={"refcab_id": 5},
         db_column="plazo",
         on_delete=models.RESTRICT,

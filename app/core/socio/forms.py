@@ -14,8 +14,8 @@ class ClienteForm(ModelForm):
         self.fields["nro_socio"].widget.attrs["autofocus"] = True
         # # super(MovimientoEntradaForm, self).__init__(*args, **kwargs)
         # estado_socio = forms.ModelChoiceField(
-        #     queryset=RefDet.objects.filter(refcab__cod__exact="ESTADO_SOCIO"),
-        #     to_field_name="cod",
+        #     queryset=RefDet.objects.filter(refcab__cod_referencia__exact="ESTADO_SOCIO"),
+        #     to_field_name="valor_unico",
         #     empty_label="(Ninguno)",
         # )
         # estado_socio.widget.attrs.update({"class": "form-control select2"})

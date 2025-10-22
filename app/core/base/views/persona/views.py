@@ -144,6 +144,7 @@ class PersonaList(ListView):
         return context
 
 
+
 class PersonaCreate(PermissionMixin, CreateView):
     model = Persona
     template_name = "persona/create.html"
@@ -260,7 +261,7 @@ class PersonaCreate(PermissionMixin, CreateView):
                             }
                         )
                     id_dpto_aux = i.departamento_id
-
+                print(data)
             elif action == "search_barrio":
                 data = [{"id": "", "text": "---------"}]
                 ciudad_list = None

@@ -117,7 +117,7 @@ class Trx501Form(forms.Form):
         ),
     )
     forma_desembolso = forms.ModelChoiceField(
-        queryset=RefDet.objects.filter(activo=True,refcab__cod__exact="FORMA_DESEMBOLSO"),
+        queryset=RefDet.objects.filter(activo=True,refcab__cod_referencia__exact="FORMA_DESEMBOLSO"),
         empty_label="(Todos)",
         required=True,
         # widget=forms.Select(attrs={"class": "form-control select2", "disabled": True}),

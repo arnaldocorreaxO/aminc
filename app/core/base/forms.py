@@ -107,16 +107,16 @@ class PersonaForm(ModelForm):
         self.fields["ci"].widget.attrs["autofocus"] = True
         # ESTADO CIVIL
         estado_civil = forms.ModelChoiceField(
-            queryset=RefDet.objects.filter(refcab__cod__exact="ESTADO_CIVIL"),
-            to_field_name="cod",
+            queryset=RefDet.objects.filter(refcab__cod_referencia__exact="ESTADO_CIVIL"),
+            to_field_name="valor_unico",
             empty_label="(Ninguno)",
         )
         estado_civil.widget.attrs.update({"class": "form-control select2"})
         self.fields["estado_civil"] = estado_civil
         # GENERO
         sexo = forms.ModelChoiceField(
-            queryset=RefDet.objects.filter(refcab__cod__exact="GENERO"),
-            to_field_name="cod",
+            queryset=RefDet.objects.filter(refcab__cod_referencia__exact="GENERO"),
+            to_field_name="valor_unico",
             empty_label="(Ninguno)",
         )
         sexo.widget.attrs.update({"class": "form-control select2"})

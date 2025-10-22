@@ -84,8 +84,8 @@ class EstadoDesembolso(ModeloBase):
 class EsquemaContable(ModeloBase):
     plazo = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "TIPO_PLAZO_PRESTAMO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "TIPO_PLAZO_PRESTAMO"},
         db_column="plazo",
         on_delete=models.RESTRICT,
         related_name="plazo_esquema_contable",
@@ -93,8 +93,8 @@ class EsquemaContable(ModeloBase):
     )
     vencimiento = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "IND_PRESTAMO_VENCIDO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "IND_PRESTAMO_VENCIDO"},
         db_column="vencimiento",
         on_delete=models.RESTRICT,
         related_name="vencimiento",
@@ -102,8 +102,8 @@ class EsquemaContable(ModeloBase):
     )
     estado_cliente = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "ESTADO_SOCIO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "ESTADO_SOCIO"},
         db_column="estado_cliente",
         on_delete=models.RESTRICT,
         related_name="estado_cliente",
@@ -120,8 +120,8 @@ class EsquemaContable(ModeloBase):
     )
     tipo_credito = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "GRUPO_TIPO_CREDITO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "GRUPO_TIPO_CREDITO"},
         db_column="tipo_credito",
         on_delete=models.RESTRICT,
         related_name="tipo_credito",
@@ -232,8 +232,8 @@ class TipoPrestamo(ModeloBase):
     )
     forma_desembolso = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "FORMA_DESEMBOLSO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "FORMA_DESEMBOLSO"},
         db_column="forma_desembolso",
         on_delete=models.RESTRICT,
         related_name="forma_desembolso",
@@ -271,8 +271,8 @@ class SituacionSolicitud(ModeloBase):
     # Estado Solicitud: Para aplicar segun situacion de la Solicitud de Prestamo
     estado = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "ESTADO_APROBACION"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "ESTADO_APROBACION"},
         db_column="estado",
         on_delete=models.RESTRICT,
         related_name="estado_solicitud2",
@@ -319,8 +319,8 @@ class DestinoPrestamo(ModeloBase):
     denominacion = models.CharField(verbose_name="Denominacion", max_length=100)
     grupo_prestamo = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "GRUPO_PRESTAMO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "GRUPO_PRESTAMO"},
         db_column="grupo_prestamo",
         on_delete=models.RESTRICT,
         related_name="grupo_prestamo2",
@@ -388,6 +388,7 @@ class SolicitudPrestamo(ModeloBase):
         on_delete=models.RESTRICT,
         related_name="operativa_contable",
         default=101,
+        blank=True
     )
     fec_solicitud = models.DateField(verbose_name="Fecha Solicitud")
     sucursal = models.ForeignKey(
@@ -427,8 +428,8 @@ class SolicitudPrestamo(ModeloBase):
     moneda = models.ForeignKey(Moneda, verbose_name="Moneda", on_delete=models.PROTECT)
     estado = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab__cod": "ESTADO_APROBACION"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab__cod_referencia": "ESTADO_APROBACION"},
         db_column="estado",
         on_delete=models.RESTRICT,
         related_name="estado_solicitud",
@@ -460,8 +461,8 @@ class SolicitudPrestamo(ModeloBase):
     )
     forma_desembolso = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab__cod": "FORMA_DESEMBOLSO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab__cod_referencia": "FORMA_DESEMBOLSO"},
         db_column="forma_desembolso",
         on_delete=models.RESTRICT,
         related_name="forma_desembolso_solicitud",
@@ -673,8 +674,8 @@ class Prestamo(ModeloBase):
 
     forma_desembolso = models.ForeignKey(
         RefDet,
-        to_field="cod",
-        limit_choices_to={"refcab_cod": "FORMA_DESEMBOLSO"},
+        to_field="valor_unico",
+        limit_choices_to={"refcab_cod_referencia": "FORMA_DESEMBOLSO"},
         db_column="forma_desembolso",
         on_delete=models.RESTRICT,
         related_name="forma_desembolso_prestamo",
