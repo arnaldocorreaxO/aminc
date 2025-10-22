@@ -216,6 +216,7 @@ def fn_monto_plazo_prestamo(request):
 def sp_trx503(request):
     # print(request.POST)
     params = {}
+    cod_usuario = request.user.cod_usuario
     params["nro_solicitud"] = TEXTO(request.POST["solicitud"])
     params["situacion_solicitud_id"] = request.POST["situacion_solicitud"]
     params["fecha"] = TEXTO(request.POST["fecha"])
@@ -227,7 +228,7 @@ def sp_trx503(request):
     # params["cant_desembolso"] = TEXTO(request.POST["cant_desembolso"])
     params["cant_desembolso"] = 1
     params["monto_aprobado"] = request.POST["monto_aprobado"]
-    params["usu_actual"] = request.user.id
+    params["usu_actual"] = cod_usuario
 
     print(params)
     storedProc = f"""

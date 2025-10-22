@@ -377,7 +377,7 @@ class SolicitudPrestamo(ModeloBase):
         verbose_name="Nro. Prestamo",
         db_column="nro_prestamo",
         max_length=10,
-        unique=True,
+        # unique=True,
         null=True,
         blank=True,
     )
