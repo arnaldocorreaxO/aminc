@@ -292,14 +292,13 @@ def sp_trx504(request):
                     DECLARE @MENSAJE VARCHAR(200)
 
                     -- TODO: Establezca los valores de los parámetros aquí.
-                    --BEGIN TRAN
+                    BEGIN TRAN
                     EXECUTE @RC = [dbo].[TRX_504] 
                      @NRO_SOLICITUD = {params['nro_solicitud']}
                     ,@FEC_ULT_DESEMBOLSO ={params['fec_ult_desembolso']}
                     ,@FEC_1ER_VENCIMIENTO={params['fec_1er_vencimiento']}
                     ,@COD_USUARIO={params['cod_usuario']}
                     ,@MENSAJE = @MENSAJE OUTPUT
-
                     
                     IF @RC<>0 
                         ROLLBACK TRAN
