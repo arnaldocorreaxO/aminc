@@ -115,7 +115,7 @@ class PersonaForm(ModelForm):
         self.fields["estado_civil"] = estado_civil
         # GENERO
         sexo = forms.ModelChoiceField(
-            queryset=RefDet.objects.filter(refcab__cod_referencia__exact="GENERO"),
+            queryset=RefDet.objects.filter(refcab__cod_referencia__exact="SEXO"),
             to_field_name="valor_unico",
             empty_label="(Ninguno)",
         )

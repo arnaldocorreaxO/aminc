@@ -277,17 +277,18 @@ def sp_trx503(request):
 def sp_trx504(request):
     # print(request.POST)
     params = {}
+    cod_usuario = request.user.cod_usuario
     params["nro_solicitud"] = TEXTO(request.POST["solicitud"])
     params["fec_ult_desembolso"] = TEXTO(request.POST["fec_ult_desembolso"])
     params["fec_1er_vencimiento"] = TEXTO(request.POST["fec_1er_vencimiento"])
-    params["usu_actual"] = request.user.id
+    params["cod_usuario"] = cod_usuario
     print(params)
     storedProc = f"""
                     DECLARE @RC INT
                     DECLARE @NRO_SOLICITUD CHAR(10)
                     DECLARE @FEC_ULT_DESEMBOLSO DATETIME
                     DECLARE @FEC_1ER_VENCIMIENTO DATETIME
-                    DECLARE @USU_ACTUAL INT
+                    DECLARE @COD_USUARIO CHAR(4)
                     DECLARE @MENSAJE VARCHAR(200)
 
                     -- TODO: Establezca los valores de los parámetros aquí.
@@ -296,14 +297,14 @@ def sp_trx504(request):
                     @NRO_SOLICITUD = {params['nro_solicitud']}
                     ,@FEC_ULT_DESEMBOLSO ={params['fec_ult_desembolso']}
                     ,@FEC_1ER_VENCIMIENTO={params['fec_1er_vencimiento']}
-                    ,@USU_ACTUAL={params['usu_actual']}
+                    ,@COD_USUARIO={params['cod_usuario']}
                     ,@MENSAJE = @MENSAJE OUTPUT
 
                     
-                    /*IF @RC<>0 
+                    IF @RC<>0 
                         ROLLBACK TRAN
                     ELSE
-                        COMMIT TRAN */
+                        COMMIT TRAN 
 
                     SELECT @RC AS RTN, @MENSAJE AS MSG, @NRO_SOLICITUD AS VAL;
     """
