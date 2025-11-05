@@ -1,82 +1,63 @@
 $(document).ready(function () {
-    console.log('trx503.js!');
-    // FORM
-    var form = $("#frmTransaccion")
-    // BUTTON
-    var procesar = $("#procesar");
-    // INPUTS
-    var fecha = $('input[name="fecha"]');
-    var fec_acta = $('input[name="fec_acta"]');
+  console.log("trx503.js!");
 
+  const $procesar = $("#procesar");
 
-    // VALIDATORS
-    var validator = form.validate({
-        lang: 'es'//
+  // Inicializa los datetimepickers
+  $('input[name="fecha"], input[name="fec_acta"]').each(function () {
+    $(this).datetimepicker({
+      format: "DD/MM/YYYY", // formato día/mes/año
+      locale: "es", // idioma español
     });
+  });
 
-    // var validator = form.validate({
-    //     rules: {
-    //         fecha: "required",
-    //         comentario: "required",
-    //         solicitud: "required",
-    //         situacion_solicitud: "required",
+  // Función para obtener el formulario hijo insertado dinámicamente
+  function getFormularioDetalle() {
+    return $("#div_transaccion").find("#frmTransaccionHijo").first(); // asume que el form hijo está dentro del div
+  }
 
-    //     },
-    //     messages: {
-    //         fecha: "Este campo es requerido",
-    //         comentario: "Este campo es requerido",
-    //         solicitud: "Debe seleccionar una solicitud para la transaccion",
-    //         situacion_solicitud: "Debe seleccionar una situacion de solicitud para la transaccion"
-    //     }
+  // Función para validar y enviar el formulario hijo
+  function saveFormAjax() {
+    const $form = getFormularioDetalle();
 
-    // });
-
-
-
-    fecha.datetimepicker({
-        format: 'DD/MM/YYYY',
-        locale: 'es',
-        // keepOpen: false,
-        // date: $('input[name="fecha"]').val(),
-    });
-    fec_acta.datetimepicker({
-        format: 'DD/MM/YYYY',
-        locale: 'es',
-        // keepOpen: false,
-        // date: $('input[name="fecha"]').val(),
-    });
-
-
-
-    /*PROCESAR TRANSACCION */
-
-    var saveFormAjax = function () {
-        // var form = $('#frmTransaccion');
-        console.log('TRANSACCION TRX503')
-        if (validator.form()) {
-            var parameters = new FormData($(form)[0]);
-            submit_formdata_with_ajax('Notificación',
-                '¿Procesar Transaccion?',
-                $('#transaccion').val(), //URL
-                parameters,
-                function (data) {
-                    if (!data.hasOwnProperty('error')) {
-                        console.log(data.val)
-                        if (data.rtn != 0) {
-                            message_warning(data.msg);
-                            return false;
-                        }
-                        else {
-                            message_success_to_url(data.msg, '.')
-                        };
-                        return false;
-                    };
-
-                });
-        }
-        return false;
+    if ($form.length === 0) {
+      alert("No se encontró el formulario de detalle.");
+      return false;
     }
 
-    procesar.on('click', saveFormAjax)
+    const validator = $form.validate({ lang: "es" });
 
+    if (validator.form()) {
+      const parameters = new FormData($form[0]);
+
+      if (!trxUrl) {
+        alert("No se ha definido la URL de procesamiento.");
+        return false;
+      }
+
+      console.log("Procesando TRX:", trxUrl);
+
+      submit_formdata_with_ajax(
+        "Notificación",
+        "¿Procesar Transacción?",
+        trxUrl,
+        parameters,
+        function (data) {
+          if (!data.hasOwnProperty("error")) {
+            console.log(data.val);
+            if (data.rtn !== 0) {
+              message_warning(data.msg);
+            } else {
+              message_success_to_url(data.msg, ".");
+            }
+          }
+        }
+      );
+    }
+
+    return false;
+  }
+
+  // Asocia el evento al botón procesar
+  $procesar.on("click", saveFormAjax);
 });

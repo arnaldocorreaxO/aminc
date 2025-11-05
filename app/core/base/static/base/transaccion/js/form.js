@@ -1,99 +1,19 @@
-
-
+// Espera a que el DOM esté completamente cargado
 $(document).ready(function () {
-    var url;
+  // Obtiene el elemento <select> que contiene las transacciones disponibles
+  const transaccion = document.querySelector("#transaccion"); // selector del combo de transacciones
 
-    var transaccion = document.querySelector("#transaccion");
-    var procesar = document.querySelector("#procesar");
+  // Define el comportamiento cuando el usuario selecciona una transacción
+  transaccion.onchange = function () {
+    // Extrae el código de la transacción seleccionada (ej. trx503)
+    const codigoTrx = transaccion.value;
 
-    var loadForm = function () {
+    // Obtiene el código del cliente desde el campo correspondiente
+    // ⚠️ Asegurarse que el campo tenga el ID correcto en el HTML: #cod_cliente
+    const codCliente = $("#cod_cliente").val();
 
-        console.log('GET URL')
-        url = transaccion.value
-        console.log(url)
-        // console.log(data_parameters);
-        $.ajax({
-            url: url,
-            // url: btn.attr("data-url"),
-            type: 'POST',
-            dataType: 'json',
-            // data: '',//data_parameters,
-            data: {
-                action: 'load_form',
-                // cod_cliente: 63
-            },
-            beforeSend: function () {
-                $("#div_transaccion").html("");
-                // div_transaccion.innerHTML = ""
-                // $("#modal-transaccion").modal("show");
-            },
-            success: function (response) {
-                // if (!response.hasOwnProperty('error')) {
-                //     $("#modal-transaccion .modal-content").html(response.html_form);
-                //     return false;
-                // }
-                // message_error(response.error);
-
-                if (!response.hasOwnProperty('error')) {
-                    $("#div_transaccion").html(response.html_form);
-                    //de esta manera ejecuta Javascript inserto en el html 
-                    // div_transaccion.innerHTML = response.html_form;
-                    //de esta manera NO ejecuta javascript inserto en el html 
-                    // div_transaccion.html = response.html_form;
-                    // $("#frmTransaccion").attr("action", url)
-                    // $("#frmTransaccion").attr("data-url", '/prestamo/solicitud_prestamo')
-                    // form.setAttribute('action', url)
-
-                    // setear_valores_form_modales(response.data)
-                    return false;
-                }
-                message_error(response.error);
-            }
-        });
-    };
-
-    // LAS LLAMADAS DE saveFormAjax SE HACEN EN CADA UNA DE LAS TRX INDEPENDIENTES
-
-    // var saveFormAjax = function () {
-    //     var form = $('#frmTransaccion');
-    //     form.validate();
-    //     console.log('TRANSACCION BASE')
-    //     var parameters = new FormData($(form)[0]);
-    //     submit_formdata_with_ajax('Notificación',
-    //         '¿Procesar Transaccion?',
-    //         $('#transaccion').val(), //URL
-    //         parameters,
-    //         function (data) {
-    //             if (!data.hasOwnProperty('error')) {
-    //                 console.log(data.val)
-    //                 if (data.rtn != 0) {
-    //                     message_warning(data.msg);
-    //                     return false;
-    //                 }
-    //                 else {
-    //                     message_success_to_url(data.msg, '.')
-    //                 };
-    //                 return false;
-    //             };
-
-    //         });
-    // }
-
-    // $("#btnPROCESAR").click(saveFormAjax);
-
-
-    // Con DOM Javascript
-    transaccion.onchange = function () {
-        loadForm();
-    };
-    // procesar.onclick = function () {
-    //     saveFormAjax();
-    // };
-    // window.location.href = window.location.href
-    // Con JQuery
-    // $("#transaccion").on('change', loadForm)
-    // $("#procesar").on('click', saveFormAjax);
-
+    // Llama a la función institucional que carga dinámicamente el formulario hijo
+    // Esta función debe insertar el HTML en #div_transaccion y cargar el JS asociado
+    insertarFormularioTransaccion(codigoTrx, codCliente);
+  };
 });
-
-

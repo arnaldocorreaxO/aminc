@@ -1,4 +1,72 @@
-<!-- {#% extends 'list.html' %} -->
+{% load widget_tweaks %}
+{% load security_extras %}
+{% load static %}
+
+{% block head_list %}
+  <!-- Validación con jQuery Validate -->
+  <script src="{% static 'lib/jquery-validation-1.19.5/dist/jquery.validate.js' %}"></script>
+  <script src="{% static 'lib/jquery-validation-1.19.5/dist/localization/messages_es.js' %}"></script>
+
+  <style>
+    .error {
+      color: #F00;
+      background-color: #FFF;
+    }
+  </style>
+{% endblock %}
+
+{% block head_form %}
+
+{% endblock %}
+
+{% block content %}
+  <form class="form" method="post" action="." enctype="multipart/form-data" id="frmTransaccionHijo">
+    <div class="card {{ dshboard.card }}">
+      <div class="card-header">
+        <h3 class="card-title">
+          {% if action == 'add' %}
+            <i class="fas fa-plus"></i>
+          {% else %}
+            <i class="fas fa-edit"></i>
+          {% endif %}
+          {{ title }}
+        </h3>
+      </div>
+
+      <div class="card-body">
+        <div class="container-fluid">
+          <input type="hidden" name="action" id="action" value="{{ action }}">
+          {% csrf_token %}
+
+          {% for field in form.visible_fields %}
+            <div class="form-group">
+              <label>{{ field.label }}:</label>
+              {% if field|is_checkbox %}
+                {{ field }}
+              {% else %}
+                {{ field|add_class:'form-control'|attr:"autocomplete:off" }}
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% block box_footer %}
+        <div class="card-footer">
+          {% block buttons %}
+            <button type="button" class="btn btn-success btn-flat" id="procesar">
+              <i class="fas fa-sync"></i> Procesar
+            </button>
+          {% endblock %}
+        </div>
+      {% endblock %}
+    </div>
+  </form>
+{% endblock %}
+
+
+
+{% comment %} <!-- {#% extends 'list.html' %} -->
 {% load widget_tweaks %}
 {% load security_extras %}
 {% load static %}
@@ -55,8 +123,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- <form class="js-transaccion-form" method="post" action="{{action_url}}" enctype="multipart/form-data" id="frmDetails" -->
-<!-- data-url="{{ list_url }}"> -->
+<form class="form" method="post" action="." enctype="multipart/form-data" id="frmTransacccionHijo">
+
 <div class="card {{ dshboard.card }}">
     <div class="card-header">
         <h3 class="card-title">
@@ -101,6 +169,6 @@
         </div>
         {% endblock %}
     </div>
-    <!-- </form> -->
+</form>
 
-    {% endblock %}
+    {% endblock %} {% endcomment %}

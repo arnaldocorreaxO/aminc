@@ -1,10 +1,24 @@
+# 🔧 Django core
 from django import forms
 from django.forms import ModelForm
+from django.forms.widgets import HiddenInput
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.edit import FormView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
+# 📦 Utilidades del proyecto
 from core.base.utils import get_fecha_actual, get_fecha_actual_ymd
 from core.caja.procedures import sp_generar_codigo_movimiento
 
+# 📁 Modelos locales
 from .models import *
+
+# 🧮 Otros
+import json
+
 
 # Campo de solo lectura para todos los forms
 readonly_fields = [
@@ -188,50 +202,38 @@ class PersonaForm(ModelForm):
             data["error"] = str(e)
         return data
 
+# Formulario base para transacciones
+class TransaccionBaseForm(forms.Form):
+    
+    modulo = forms.CharField(widget=HiddenInput())
+    tipo_acceso = forms.CharField(widget=HiddenInput())
 
-class TransaccionForm(forms.Form):
     def __init__(self, *args, **kwargs):
-        request = kwargs.pop("request", None)
-        data = {}
-        if request:
-            cod_usuario = request.user.cod_usuario
-            usuario = request.user
-            sucursal_id = request.user.sucursal_id
-            sucursal = request.user.sucursal
-
-            # GENERAMOS CODIGO DE MOVIMIENTO
-            data = sp_generar_codigo_movimiento(request)
-
-            cod_movimiento = data["msg"]
-            if data["val"]:
-                cod_movimiento = data["val"]
-
-        #         # OBTENEMOS NRO DE FACTURA
-        #         data = sp_obt_nro_comprobante(request, tip_comprobante="FCT", operacion="R")
-        #         nro_factura = data["val"]
-        #         # OBTENEMOS NRO DE RECIBO
-        #         data = sp_obt_nro_comprobante(request, tip_comprobante="RCB", operacion="R")
-        #         nro_recibo = data["val"]
-
-        # super(TransaccionForm, self).__init__(*args, **kwargs)
+        self.request = kwargs.pop("request", None)
+        self.modulo = kwargs.pop("modulo", None)
+        self.tipo_acceso = kwargs.pop("tipo_acceso", None)
         super().__init__(*args, **kwargs)
-        if request:
-            self.fields["cod_usuario"].initial = cod_usuario
-            self.fields["usuario"].initial = usuario
-            self.fields["sucursal_id"].initial = sucursal_id
-            self.fields["sucursal"].initial = sucursal
-            self.fields["cod_movimiento"].initial = cod_movimiento
-            # self.fields["transaccion"].queryset = Transaccion.objects.none()
-            # self.fields["transaccion"].queryset = Transaccion.objects.filter(
-            # cod_transaccion=502
-            # )
-            # self.fields["transaccion"].initial = 502
-            # self.fields["transaccion"].initial = transaccion
 
-    #     if data:
-    #         self.fields["cod_movimiento"].initial = cod_movimiento
-    #         self.fields["nro_factura"].initial = nro_factura
-    #         self.fields["nro_recibo"].initial = nro_recibo
+        if self.request:
+            self._set_usuario_context()
+            self._set_codigo_movimiento()
+        
+        # Inicializar campos ocultos
+        self.fields["modulo"].initial = self.modulo
+        self.fields["tipo_acceso"].initial = self.tipo_acceso
+
+
+    def _set_usuario_context(self):
+        user = self.request.user
+        self.fields["cod_usuario"].initial = getattr(user, "cod_usuario", "")
+        self.fields["usuario"].initial = user
+        self.fields["sucursal_id"].initial = getattr(user, "sucursal_id", "")
+        self.fields["sucursal"].initial = getattr(user, "sucursal", "")
+
+    def _set_codigo_movimiento(self):
+        resultado = sp_generar_codigo_movimiento(self.request)
+        cod_movimiento = resultado.get("val") or resultado.get("msg")
+        self.fields["cod_movimiento"].initial = cod_movimiento
 
     fec_movimiento = forms.DateField(
         label="Fecha Movimiento",
@@ -248,8 +250,9 @@ class TransaccionForm(forms.Form):
             },
         ),
     )
+
     cod_movimiento = forms.CharField(
-        label="Codigo Movimiento",
+        label="Código Movimiento",
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
@@ -258,6 +261,7 @@ class TransaccionForm(forms.Form):
             },
         ),
     )
+
     cliente = forms.CharField(
         label="Seleccionar Cliente",
         widget=forms.Select(
@@ -269,6 +273,7 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
+
     cod_usuario = forms.CharField(
         label="Usuario",
         widget=forms.TextInput(
@@ -280,6 +285,7 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
+
     usuario = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -290,6 +296,7 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
+
     sucursal_id = forms.CharField(
         label="Sucursal",
         widget=forms.TextInput(
@@ -301,6 +308,7 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
+
     sucursal = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -311,8 +319,9 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
+
     transaccion = forms.CharField(
-        label="Seleccionar Transaccion",
+        label="Seleccionar Transacción",
         widget=forms.Select(
             attrs={
                 "id": "transaccion",
@@ -322,13 +331,56 @@ class TransaccionForm(forms.Form):
         ),
         required=False,
     )
-    # transaccion = forms.ModelChoiceField(
-    #     label="Transaccion",
-    #     queryset=Transaccion.objects.filter(activo=True, tipo_acceso="C"),
-    #     empty_label="(Todos)",
-    #     widget=forms.Select(attrs={"class": "form-control select2"}),
-    #     # disabled=True,
-    #     # required=False,
-    # )
-def j():
-    pass
+
+# 🧱 Clase base para transacciones modales (TRX)
+# Centraliza lógica de carga de formulario, ejecución y búsqueda
+class TransaccionModalFormView(PermissionRequiredMixin, FormView):
+    template_name = None               # Debe ser definido por la subclase
+    form_class = None                 # Debe ser definido por la subclase
+    permission_required = None       # Debe ser definido por la subclase
+    action_url = None                # URL que recibe el submit del formulario
+    titulo = None                    # Título institucional para el modal
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = {}
+        action = request.POST.get("action", "")
+        try:
+            if action == "load_form":
+                if request.user.has_perm(self.permission_required):
+                    context = self.get_context_data()
+                    context["form"] = self.form_class()
+                    context["action"] = "trx"
+                    context["action_url"] = self.action_url
+                    data["html_form"] = render_to_string(
+                        self.template_name, context, request=request
+                    )
+                else:
+                    data["error"] = "No tiene permisos para ejecutar esta transacción"
+
+            elif action == "search":
+                data = self.handle_search(request)
+
+            elif action == "trx":
+                data = self.handle_trx(request)
+
+        except Exception as e:
+            data["error"] = str(e)
+
+        return HttpResponse(json.dumps(data, default=str), content_type="application/json")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.titulo or "Transacción Modal"
+        return context
+
+    # 🔍 Método opcional para búsquedas personalizadas
+    def handle_search(self, request):
+        return {"error": "Método de búsqueda no implementado"}
+
+    # ⚙️ Método opcional para ejecutar la transacción
+    def handle_trx(self, request):
+        return {"error": "Transacción no implementada"}

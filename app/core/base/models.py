@@ -1,5 +1,6 @@
 import os
-
+import re
+from django.templatetags.static import static
 
 from core.models import ModeloBase
 from django.core.validators import MinLengthValidator
@@ -66,47 +67,6 @@ class RefDet(ModeloBase):
         verbose_name = "Referencia Detalle"
         verbose_name_plural = "Referencias Detalle"
         unique_together = ["refcab", "valor_unico"]
-
-# # Create your models here.
-# """REFERENCIA CABECERA"""
-# class RefCab2(ModeloBase):
-#     cod = models.CharField(
-#         verbose_name="Codigo", db_column="cod", max_length=20, unique=True,null=True,blank=True
-#     )
-#     denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
-
-#     def __str__(self):
-#         return "{} - {}".format(self.cod, self.denominacion)
-
-#     class Meta:
-#         # ordering = ['tip_movimiento',]
-#         db_table = "bs_refcabx"
-#         verbose_name = "Referencia Cabecera"
-#         verbose_name_plural = "Referencias Cabecera"
-
-
-# """REFERENCIA DETALLE"""
-# class RefDet2(ModeloBase):
-#     refcab = models.ForeignKey(
-#         RefCab2,
-#         verbose_name="Referencia Cabecera",
-#         on_delete=models.RESTRICT,
-#         related_name="referencia",
-#     )
-#     cod = models.CharField(
-#         verbose_name="Codigo", db_column="cod", max_length=20, unique=True,null=True,blank=True
-#     )
-#     denominacion = models.CharField(verbose_name="Denominacion", max_length=50)
-
-#     def __str__(self):
-#         return self.denominacion or ""
-
-#     class Meta:
-#         # ordering = ['tip_movimiento',]
-#         db_table = "bs_refdetx"
-#         verbose_name = "Referencia Detalle"
-#         verbose_name_plural = "Referencias Detalle"
-#         unique_together = ["refcab", "cod"]
 
 
 """MESES"""
@@ -182,10 +142,43 @@ class Transaccion(ModeloBase):
     url = models.CharField(
         max_length=100, verbose_name="Url", unique=True, null=True, blank=True
     )
+    requiere_cliente = models.BooleanField(
+    default=False,
+    verbose_name="Requiere Cliente",
+    help_text="Indica si esta transacción requiere un código de cliente para ejecutarse"
+    )
+
 
     # Si la transaccion es por defecto, automaticamente es la opcion disponible para los movimientos, si no se elige otra opcion
     def __str__(self):
         return f"{self.cod_transaccion}-{self.denominacion}"
+    
+    @property
+    def script_url(self):
+        """
+        Deriva la ruta del script JavaScript asociado a la transacción.
+        Convierte '/modulo/trxXXX/' → '/static/modulo/js/trxXXX.js'
+        Mantiene una única fuente de verdad en el campo `url`.
+        """
+        if self.url:
+            ruta = self.url.lstrip("/")  # quita el primer / para evitar /static//
+            ruta_js = re.sub(r"^(.*/)?trx(\d+)/$", r"\1js/trx\2.js", ruta)
+            return static(ruta_js)
+        return ""
+
+
+
+    def toJSON(self):
+        # Serializa los datos clave de la transacción para uso en el frontend
+        # Incluye la URL de ejecución y la ruta del script derivada automáticamente
+        return {
+            "cod_transaccion": self.cod_transaccion,
+            "denominacion": self.denominacion,
+            "modulo": self.modulo.cod_modulo,
+            "url": self.url,
+            "script": self.script_url,
+            "requiere_cliente": self.requiere_cliente,
+        }
 
     class Meta:
         ordering = [

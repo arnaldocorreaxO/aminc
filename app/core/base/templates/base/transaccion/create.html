@@ -21,6 +21,8 @@
 <script src="{% static 'lib\jquery-validation-1.19.5\dist\jquery.validate.js' %}"></script>
 
 <!-- SCRIPT LOCALES  -->
+<script src="{% static 'base/transaccion/js/abrirModalTransaccion.js' %}"></script>
+<script src="{% static 'base/transaccion/js/insertarFormularioTransaccion.js' %}"></script>
 <script src="{% static 'base/transaccion/js/form.js' %}"></script>
 <script src="{% static 'js/select2/cliente.js' %}"></script>
 <script src="{% static 'js/select2/transaccion.js' %}"></script>
@@ -45,8 +47,15 @@
         <div class="card-body" style="display: block;">
             <div class="container-fluid">
                 {% csrf_token %}
+                
+                <!-- Campos ocultos renderizados desde el form para uso en JavaScript -->
+                {{ form.modulo }}
+                {{ form.tipo_acceso }}
+
+                {% comment %} 
                 <input type="hidden" id="modulo" name="modulo" value="{{ modulo }}">
-                <input type="hidden" id="tipo_acceso" name="tipo_acceso" value="{{ tipo_acceso }}">
+                <input type="hidden" id="tipo_acceso" name="tipo_acceso" value="{{ tipo_acceso }}"> 
+                {% endcomment %}
                 <div class="form-row">
                     <div class="col-md-3">
                         <div class="form-group">
@@ -97,7 +106,7 @@
                         </div>
                     </div>
                     <div class="form-group col-md-6 mb-0">
-                        <label for="{{ form.cliente.id_for_label }}">{{form.transaccion.label}}</label>
+                        <label for="{{ form.transaccion.id_for_label }}">{{form.transaccion.label}}</label>
                         <div class="input-group">
                             {{ form.transaccion}}
                         </div>
@@ -127,12 +136,22 @@
 </form>
 
 <!-- VENTANAS MODALES -->
-<div class="modal fade" id="modal-transaccion">
+{% comment %} <div class="modal fade" id="modal-transaccion">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <!-- CONTENIDO DEL MODAL -->
         </div>
     </div>
+</div> {% endcomment %}
+
+
+<div class="modal fade" id="modal-transaccion" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <!-- Se carga dinámicamente -->
+    </div>
+  </div>
 </div>
+
 
 {% endblock %}

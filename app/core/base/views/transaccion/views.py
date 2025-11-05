@@ -8,18 +8,26 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView
 
-from core.base.forms import TransaccionForm
+from core.base.forms import TransaccionBaseForm
 from core.base.models import Transaccion
 from core.base.utils import isNULL
 
+
+# API para obtener información de una transacción por su código
+def get_transaccion_info(request):
+    codigo = request.GET.get("codigo")
+    trx = Transaccion.objects.filter(cod_transaccion=codigo).first()
+    if trx:
+        return JsonResponse(trx.toJSON())
+    return JsonResponse({"error": "Transacción no encontrada"}, status=404)
 
 # TRANSACCIONES CABECERA
 # El path debe ir siempre con el nombre del modulo principal para
 # evitar conflictos con los templates de transacciones de otros modulos
 # template_name = "transaccion/base/create.html"
-class TransaccionFormView(PermissionRequiredMixin, FormView):
+class TransaccionBaseFormView(PermissionRequiredMixin, FormView):
     template_name = "base/transaccion/create.html"
-    form_class = TransaccionForm
+    form_class = TransaccionBaseForm
     permission_required = "contable.add_movimiento"
 
     @method_decorator(csrf_exempt)
@@ -72,8 +80,8 @@ class TransaccionFormView(PermissionRequiredMixin, FormView):
                     # Como codigo de cliente no tiene ID, retornamos asi, o sino no funciona SELECT2
                     # una matriz de objetos que contienen, como mínimo, las propiedades 'id' y 'text'
                     item = {}
-                    item["id"] = isNULL(row.url, row.cod_transaccion)
-                    item["text"] = str(row)
+                    item["id"] = str(row.cod_transaccion) # siempre el codigo como value
+                    item["text"] = str(row) # lo que se ve en el select
                     data.append(item)
         except Exception as e:
             data["error"] = str(e)
@@ -81,7 +89,7 @@ class TransaccionFormView(PermissionRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
-        context["form"] = TransaccionForm(request=self.request)
+        context["form"] = TransaccionBaseForm(request=self.request)
         context["list_url"] = self.success_url
         context["title"] = "Transacciones de Modulos"
         # context["action"] = "add" #LA TRANSACCION PRINCIPAL CABECERA NO TIENE ACTION POR AHORA
