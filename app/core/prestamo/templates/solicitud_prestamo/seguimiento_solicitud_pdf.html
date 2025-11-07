@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+            size: A4;
+            margin: 1cm 2cm 2cm 2cm; /* top, right, bottom, left */
+        }
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    .encabezado { text-align: center; margin-bottom: 20px; }
+    .tabla { width: 100%; border-collapse: collapse; }
+    .tabla th, .tabla td { border: 1px solid #ccc; padding: 6px; }
+    .firma { margin-top: 40px; text-align: right; }
+    .img-logo {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Encabezado institucional -->
+<table style="width: 100%; margin-bottom: 10px; font-size: 12px;">
+    <tr>
+        <td style="width: 20%; vertical-align: top;" >
+            <img src="{{ empresa.get_image }}" class="img-logo">
+        </td>
+        <td style="width: 80%; text-align: center;">
+            <strong>{{ empresa.denominacion }}</strong><br>
+            {{ empresa.direccion }}<br>
+            Teléfono: {{ empresa.telefono }}
+        </td>
+    </tr>
+</table>
+ <!-- Título principal -->
+  <div class="encabezado">
+    <h3>Seguimiento de Solicitud N° {{ solicitud.nro_solicitud }}</h3>
+    <p>Fecha de generación: {{ now|date:"d/m/Y H:i" }}</p>
+  </div>
+  <div class="datos-solicitud" style="margin-bottom: 20px;">
+  <table style="width: 100%; font-size: 12px;">
+    <tr>
+      <td><strong>Cliente:</strong> {{ solicitud.cliente.persona }}</td>
+      <td><strong>Tipo de Préstamo:</strong> {{ solicitud.tipo_prestamo.denominacion }}</td>
+    </tr>
+    <tr>
+      <td><strong>Monto Solicitado:</strong> {{ solicitud.monto_solicitado|floatformat:0 }}</td>
+      <td><strong>Plazo (meses):</strong> {{ solicitud.plazo_meses }}</td>
+    </tr>
+    <tr>
+      <td><strong>Cantidad de Cuotas:</strong> {{ solicitud.cant_cuota }}</td>
+      <td><strong>Situación Actual:</strong> {{ solicitud.situacion_solicitud.denominacion }}</td>
+    </tr>
+  </table>
+</div>
+
+
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Situación</th>
+        <th>Comentario</th>
+        <th>Acta</th>
+        <th>Resolución</th>
+        <th>Monto Aprobado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in situaciones %}
+      <tr>
+        <td>{{ s.fecha|date:"d/m/Y" }}</td>
+        <td>{{ s.situacion_solicitud.denominacion }}</td>
+        <td>{{ s.comentario }}</td>
+        <td>{{ s.nro_acta|default:"-" }}<br>{{ s.fec_acta|date:"d/m/Y" }}</td>
+        <td>{{ s.nro_resolucion|default:"-" }}</td>
+        <td style="text-align:right;">{{ s.monto_aprobado|floatformat:0 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;">No hay registros de seguimiento.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="firma">
+    <p>__________________________</p>
+    <p>Responsable de Seguimiento</p>
+  </div>
+</body>
+</html>

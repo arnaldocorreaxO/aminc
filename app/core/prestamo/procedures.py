@@ -212,7 +212,11 @@ def fn_monto_plazo_prestamo(request):
                 """
     return SP_EXECUTE(storedProc)
 
+# Transacción TRX 501 - Desembolso de Préstamos
+def sp_trx501(request):
+    return {"error": "Función sp_trx501 no implementada aún."}
 
+# Transacción TRX 503 - Resolución de Préstamos
 def sp_trx503(request):
     # print(request.POST)
     params = {}
@@ -273,7 +277,7 @@ def sp_trx503(request):
     """
     return SP_EXECUTE(storedProc)
 
-
+# Transacción TRX 504 - Liquidación de Préstamos
 def sp_trx504(request):
     # print(request.POST)
     params = {}

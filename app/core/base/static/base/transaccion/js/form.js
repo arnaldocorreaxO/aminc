@@ -1,3 +1,4 @@
+let trxUrl = ""; // variable global para almacenar la URL real
 // Espera a que el DOM esté completamente cargado
 $(document).ready(function () {
   // Obtiene el elemento <select> que contiene las transacciones disponibles

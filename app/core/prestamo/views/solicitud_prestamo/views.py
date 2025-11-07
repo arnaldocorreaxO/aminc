@@ -1,17 +1,24 @@
+from datetime import datetime
 import json
 import math
-
+from django.template.loader import get_template
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
+from regex import template
+from weasyprint import HTML
 
+from core.base.models import Empresa
+from core.base.views.generics import BaseListView
 from core.prestamo.forms import SolicitudPrestamoForm
-from core.prestamo.models import ProformaCuota, SolicitudPrestamo
+from core.prestamo.models import ProformaCuota, SituacionSolicitudPrestamo, SolicitudPrestamo
 from core.prestamo.procedures import (
     fn_monto_plazo_prestamo,
     sp_alta_solicitud_prestamo,
@@ -19,114 +26,48 @@ from core.prestamo.procedures import (
 )
 from core.security.mixins import PermissionMixin
 
-
-class SolicitudPrestamoList(PermissionRequiredMixin, ListView):
+class SolicitudPrestamoList(PermissionRequiredMixin, BaseListView):
+    """
+    Vista para listar solicitudes de préstamo con búsqueda, ordenamiento y paginación.
+    Hereda de BaseListView para aplicar lógica común.
+    """
     model = SolicitudPrestamo
     template_name = "solicitud_prestamo/list.html"
     permission_required = "view_solicitudprestamo"
+
+    # Campos habilitados para búsqueda textual y numérica
+    search_fields = [
+        "nro_solicitud",
+        "cliente__persona__nombre",
+        "cliente__persona__apellido",
+    ]
+    numeric_fields = ["id", "nro_solicitud"]
+    default_order_fields = ["-id"]
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        data = {}
-        # print(request.POST)
-        action = request.POST["action"]
-
-        try:
-            if action == "search":
-                data = []
-
-                _start = request.POST["start"]
-                _length = request.POST["length"]
-                _search = request.POST["search[value]"]
-
-                # _order = ["aprobado"]
-                _order = []
-
-                for i in range(9):
-                    _column_order = f"order[{i}][column]"
-                    # print('Column Order:',_column_order)
-                    if _column_order in request.POST:
-                        _column_number = request.POST[_column_order]
-                        _order.append(
-                            request.POST[f"columns[{_column_number}][data]"].split(".")[
-                                0
-                            ]
-                        )
-                    if f"order[{i}][dir]" in request.POST:
-                        _dir = request.POST[f"order[{i}][dir]"]
-                        if _dir == "desc":
-                            _order[i] = f"-{_order[i]}"
-
-                _where = "'' = %s"
-                persona = None
-                if len(_search):
-                    pass
-                    # if _search.isnumeric():
-                    # 	_search = "%" + _search.replace(' ', '%') + "%"
-                    # 	_where = " upper(nro_solicitud ) LIKE upper(%s)"
-                    # else:
-                    # 	persona = Persona.objects.filter(nombre__icontains=_search).first()
-                    # 	print(persona)
-
-                # print(_where)
-                # qs = SolicitudPrestamo.objects\
-                # 				.filter(persona__nombre__icontains=_search)\
-                # 				.extra(where=[_where], params=[_search])\
-                # 				.order_by(*_order)
-                qs = SolicitudPrestamo.objects.filter(
-                    Q(nro_solicitud__icontains=_search)
-                    | Q(cliente__persona__nombre__icontains=_search)
-                    | Q(cliente__persona__apellido__icontains=_search)
-                ).order_by(*_order)
-
-                # print(qs.query)
-                total = qs.count()
-                # print(total)
-
-                if _start and _length:
-                    start = int(_start)
-                    length = int(_length)
-                    page = math.ceil(start / length) + 1
-                    per_page = length
-
-                if _length == "-1":
-                    qs = qs[start:]
-                else:
-                    qs = qs[start : start + length]
-
-                position = start + 1
-                for i in qs:
-                    item = i.toJSON()
-                    # item['position'] = position
-                    data.append(item)
-                    position += 1
-                # print(data)
-                data = {
-                    "data": data,
-                    "page": page,  # [opcional]
-                    "per_page": per_page,  # [opcional]
-                    "recordsTotal": total,
-                    "recordsFiltered": total,
-                }
-            else:
-                data["error"] = "No ha ingresado una opción"
-        except Exception as e:
-            data["error"] = str(e)
-        return HttpResponse(
-            json.dumps(data, default=str), content_type="application/json"
-        )
+        """
+        Maneja peticiones POST para búsqueda AJAX.
+        """
+        action = request.POST.get("action", "")
+        if action == "search":
+            return self.handle_search(request)
+        return JsonResponse({"error": "No ha ingresado una opción válida"}, status=400)
 
     def get_context_data(self, **kwargs):
+        """
+        Agrega variables al contexto de la plantilla.
+        """
         context = super().get_context_data(**kwargs)
         context["create_url"] = reverse_lazy("solicitud_prestamo_create")
-        context["title"] = "Listado de Solicitudes de Prestamos "
+        context["title"] = "Listado de Solicitudes de Préstamo"
         return context
 
 
-class SolicitudPrestamoCreate(CreateView):
+class SolicitudPrestamoCreate(PermissionMixin,CreateView):
     model = SolicitudPrestamo
     template_name = "solicitud_prestamo/create.html"
     form_class = SolicitudPrestamoForm
@@ -187,7 +128,7 @@ class SolicitudPrestamoCreate(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
         context["list_url"] = self.success_url
-        context["title"] = "Nuevo registro Solicitud de Prestamo"
+        context["title"] = "Nuevo registro de Solicitud de Préstamo"
         context["action"] = "add"
         return context
 
@@ -303,3 +244,28 @@ def generar_proforma_cuota(request):
         data["error"] = str(proforma["msg"])
 
     return data
+
+
+
+class SeguimientoSolicitudPDFView(View):
+    def get(self, request, pk):
+        solicitud = get_object_or_404(SolicitudPrestamo, pk=pk)
+        situaciones = SituacionSolicitudPrestamo.objects.filter(
+            nro_solicitud=solicitud
+        ).order_by("fecha", "id")
+        empresa = Empresa.objects.first()
+        
+        template = get_template('solicitud_prestamo/seguimiento_solicitud_pdf.html')
+        context = {
+            'solicitud': solicitud,
+            'situaciones': situaciones,
+            'empresa': empresa,
+            'now': datetime.now(),
+        }
+        
+        html_template = template.render(context).encode(encoding='UTF-8')
+
+        pdf = HTML(string=html_template, base_url=request.build_absolute_uri()).write_pdf()
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'filename="seguimiento_{solicitud.nro_solicitud}.pdf"'
+        return response

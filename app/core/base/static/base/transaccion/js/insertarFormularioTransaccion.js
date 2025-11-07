@@ -1,5 +1,3 @@
-let trxUrl = ""; // variable global para almacenar la URL real
-
 function insertarFormularioTransaccion(codigoTrx, codCliente) {
   $.ajax({
     url: "/base/api/transaccion/info/",
@@ -10,7 +8,7 @@ function insertarFormularioTransaccion(codigoTrx, codCliente) {
         message_info("Debe seleccionar un socio antes de continuar.");
         return;
       }
-
+      // trxUrl es una variable global definida en form.js
       trxUrl = trx.url; // guardar la URL real para usarla al procesar
 
       $.ajax({
@@ -27,22 +25,7 @@ function insertarFormularioTransaccion(codigoTrx, codCliente) {
         success: function (response) {
           if (!response.hasOwnProperty("error")) {
             $("#div_transaccion").html(response.html_form);
-
-            // Carga el script específico de la transacción desde /static/
-            if (trx.script) {
-              const script = document.createElement("script");
-              script.type = "text/javascript";
-
-              // Si el script ya incluye /static/, no lo duplicamos
-              const basePath = trx.script.startsWith("/static/")
-                ? trx.script
-                : `/static/${trx.script}`;
-
-              script.src = `${basePath}?v=${new Date().getTime()}`; // versión para evitar caché
-              script.async = true;
-              document.body.appendChild(script);
-            }
-
+            cargarScriptsTransaccion(trx); // carga los scripts necesarios
             // Opcional: actualizar atributos del formulario principal si es necesario
             $("#frmTransaccion").attr("action", trx.url);
             return false;
@@ -57,5 +40,33 @@ function insertarFormularioTransaccion(codigoTrx, codCliente) {
     error: function () {
       message_error("No se pudo obtener la información de la transacción.");
     },
+  });
+}
+
+function cargarScriptsTransaccion(trx) {
+  const scripts = [];
+
+  // Siempre cargar el utilitario común
+  scripts.push("/static/js/formulario_utils.js");
+
+  // Agregar el script específico de la transacción si existe
+  // El script debe estar en formato relativo a /static/
+  // Ejemplo: 'prestamo/js/trx501.js'
+  if (trx.script) {
+    const basePath = trx.script.startsWith("/static/")
+      ? trx.script
+      : `/static/${trx.script}`;
+    scripts.push(basePath);
+  }
+
+  // Cargar todos los scripts con control de caché y sin duplicar
+  scripts.forEach((src) => {
+    if (!document.querySelector(`script[src^="${src}"]`)) {
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = `${src}?v=${new Date().getTime()}`;
+      script.async = true;
+      document.body.appendChild(script);
+    }
   });
 }

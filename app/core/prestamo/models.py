@@ -756,7 +756,22 @@ class SituacionSolicitudPrestamo(ModeloBase):
         on_delete=models.PROTECT,
         null=True,
     )
-    monto_aprobado = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    monto_aprobado = models.DecimalField(max_digits=14, decimal_places=2, default=0)   
+
+    @classmethod
+    def get_ultima_fecha_acta(cls):
+        ultimo_registro = cls.objects.filter(fec_acta__isnull=False).order_by('-id').first()
+        return ultimo_registro.fec_acta.strftime('%Y-%m-%d') if ultimo_registro and ultimo_registro.fec_acta else None
+
+    @classmethod
+    def get_ultimo_nro_acta(cls):
+        ultimo_registro = cls.objects.filter(nro_acta__isnull=False).order_by('-id').first() 
+        return ultimo_registro.nro_acta if ultimo_registro and ultimo_registro.nro_acta else None
+
+    @classmethod
+    def get_ultimo_nro_resolucion(cls):
+        ultimo_registro = cls.objects.filter(nro_resolucion__isnull=False).order_by('-id').first()
+        return ultimo_registro.nro_resolucion if ultimo_registro and ultimo_registro.nro_resolucion else None
 
     class Meta:
         db_table = "pr_situacion_solicitud_prestamo"

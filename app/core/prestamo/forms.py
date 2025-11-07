@@ -1,9 +1,10 @@
+from datetime import date
 from django import forms
 from django.forms import ModelForm
 
 from core.base.forms import readonly_fields
 from core.base.models import Parametro, RefDet
-from core.base.utils import get_fecha_actual_ymd
+from core.base.utils import get_fecha_actual, get_fecha_actual_ymd
 from core.general.models import Banco, CuentaBanco
 
 from .models import *
@@ -14,7 +15,7 @@ class SolicitudPrestamoForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["fec_solicitud"].widget.attrs["autofocus"] = True
         self.fields["cant_cuota"].initial = (
-        Parametro.objects.filter(parametro="CANT_CUOTA_ANUAL_INICIAL").first() or 12
+            Parametro.objects.filter(parametro="CANT_CUOTA_ANUAL_INICIAL").first() or 12
         ).valor
         self.fields["sucursal"].queryset = Sucursal.objects.exclude(activo=False)
         self.fields["cliente"].queryset = Cliente.objects.none()
@@ -101,8 +102,9 @@ class SolicitudPrestamoForm(ModelForm):
 
 
 # *TRX 501
-class Trx501Form(forms.Form):   
+class Trx501Form(forms.Form):
     prestamo = forms.ModelChoiceField(
+        label="Préstamo a Desembolsar",
         queryset=Prestamo.objects.filter(
             activo=True, situacion_prestamo__in=["PEND", "INIC"]
         ),
@@ -117,7 +119,10 @@ class Trx501Form(forms.Form):
         ),
     )
     forma_desembolso = forms.ModelChoiceField(
-        queryset=RefDet.objects.filter(activo=True,refcab__cod_referencia__exact="FORMA_DESEMBOLSO"),
+        label="Forma de Desembolso",
+        queryset=RefDet.objects.filter(
+            activo=True, refcab__cod_referencia__exact="FORMA_DESEMBOLSO"
+        ),
         empty_label="(Todos)",
         required=True,
         # widget=forms.Select(attrs={"class": "form-control select2", "disabled": True}),
@@ -128,6 +133,7 @@ class Trx501Form(forms.Form):
         ),
     )
     banco = forms.ModelChoiceField(
+        label="Banco / Tesorería",
         queryset=Banco.objects.filter(activo=True),
         empty_label="(Todos)",
         required=True,
@@ -139,6 +145,7 @@ class Trx501Form(forms.Form):
         ),
     )
     nro_cuenta_banco = forms.ModelChoiceField(
+        label="Nro. Cuenta Banco / Tesorería",
         queryset=CuentaBanco.objects.filter(activo=True),
         empty_label="(Todos)",
         required=True,
@@ -150,22 +157,25 @@ class Trx501Form(forms.Form):
         ),
     )
 
+
 # *TRX 503
 class Trx503Form(forms.Form):
     fecha = forms.DateField(
+        label="Fecha Situación Solicitud",
         required=True,
+        initial=get_fecha_actual_ymd(),
         widget=forms.DateInput(
             format="%Y-%m-%d",
             attrs={
                 "class": "form-control datetimepicker-input",
                 "id": "fecha",
-                "value": get_fecha_actual_ymd,
                 "data-toggle": "datetimepicker",
                 "data-target": "#fecha",
             },
         ),
     )
     solicitud = forms.ModelChoiceField(
+        label="Solicitud de Préstamo",
         queryset=SolicitudPrestamo.objects.filter(
             activo=True, estado__in=["PEND", "INIC"]
         ),
@@ -180,6 +190,7 @@ class Trx503Form(forms.Form):
         ),
     )
     situacion_solicitud = forms.ModelChoiceField(
+        label="Situación Solicitud",
         queryset=SituacionSolicitud.objects.filter(activo=True),
         empty_label="(Todos)",
         required=True,
@@ -191,35 +202,61 @@ class Trx503Form(forms.Form):
         ),
     )
     comentario = forms.CharField(required=False)
-    nro_acta = forms.CharField(required=False)
+
+    nro_acta = forms.CharField(
+        label="Nro. Acta",
+        required=False,
+        initial=SituacionSolicitudPrestamo.get_ultimo_nro_acta,
+    )
 
     fec_acta = forms.DateField(
+        label="Fecha Acta",
         required=False,
+        initial=SituacionSolicitudPrestamo.get_ultima_fecha_acta,
         widget=forms.DateInput(
             format="%Y-%m-%d",
             attrs={
                 "class": "form-control datetimepicker-input",
                 "id": "fec_acta",
-                "value": get_fecha_actual_ymd,
                 "data-toggle": "datetimepicker",
                 "data-target": "#fec_acta",
             },
         ),
     )
-    nro_resolucion = forms.CharField(required=True)
+    nro_resolucion = forms.CharField(
+        label="Nro. Resolución",
+        required=True,
+        initial=SituacionSolicitudPrestamo.get_ultimo_nro_resolucion,
+    )
 
     monto_aprobado = forms.DecimalField(
+        label="Monto a Aprobar",
         required=True,
         widget=forms.TextInput(
             attrs={
                 "class": "form-control text-right",
                 "size": "40",
                 "style": "font-size: medium",
-                # "readonly": True,
-                # "required": False,
+                "id": "monto_aprobado",
+                "maxlength": "25",
+                "data-decimales": "0",  # 🔹 clave para formateo JS
+                "data-col": "2",  # 🔹 clave para formateo JS
             }
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 🔹 Asignar col-md-x institucionalmente
+        self.fields["fecha"].col = 6
+        self.fields["solicitud"].col = 6
+        self.fields["situacion_solicitud"].col = 6
+        self.fields["comentario"].col = 6
+        self.fields["nro_acta"].col = 3
+        self.fields["fec_acta"].col = 3
+        self.fields["nro_resolucion"].col = 3
+        self.fields["monto_aprobado"].col = 3
 
 
 # *TRX 504
@@ -265,3 +302,11 @@ class Trx504Form(forms.Form):
             },
         ),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # 🔹 Asignar col-md-x institucionalmente
+        self.fields["solicitud"].col = 12
+        self.fields["fec_ult_desembolso"].col = 6
+        self.fields["fec_1er_vencimiento"].col = 6

@@ -10,6 +10,7 @@ from core.prestamo.views.prestamo.views import (
 
 # Vistas de solicitud de préstamo
 from core.prestamo.views.solicitud_prestamo.views import (
+    SeguimientoSolicitudPDFView,
     SolicitudPrestamoList,
     SolicitudPrestamoCreate,
     SolicitudPrestamoUpdate,
@@ -23,11 +24,16 @@ urlpatterns = [
     path("solicitud_prestamo/add/", SolicitudPrestamoCreate.as_view(), name="solicitud_prestamo_create"),
     path("solicitud_prestamo/update/<int:pk>/", SolicitudPrestamoUpdate.as_view(), name="solicitud_prestamo_update"),
     path("solicitud_prestamo/delete/<int:pk>/", SolicitudPrestamoDelete.as_view(), name="solicitud_prestamo_delete"),
+    # 📄 Seguimiento de Solicitud de Préstamo - PDF
+    path('solicitud_prestamo/seguimiento/pdf/<int:pk>/', SeguimientoSolicitudPDFView.as_view(), name='seguimiento_solicitud_pdf'),
 
-    # Ru
+    # Ruta transacional genérica para préstamos
     path("transaccion/", TransaccionPrestamoFormView.as_view(), name="trx_prestamo_create"), # Ruta genérica de transacción
     # 🔄 Transacciones de Préstamo
     path("trx501/", Trx501.as_view(), name="trx501_create"),
     path("trx503/", Trx503.as_view(), name="trx503_create"),
     path("trx504/", Trx504.as_view(), name="trx504_create"),
+
+  
 ]
+

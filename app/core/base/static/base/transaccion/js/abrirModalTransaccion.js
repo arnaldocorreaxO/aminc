@@ -1,5 +1,3 @@
-let trxUrl = ""; // variable global para almacenar la URL real
-
 function abrirModalTransaccion(codigoTrx, codCliente) {
   $.ajax({
     url: "/base/api/transaccion/info/",
@@ -11,6 +9,7 @@ function abrirModalTransaccion(codigoTrx, codCliente) {
         return;
       }
 
+      // trxUrl es una variable global definida en form.js
       trxUrl = trx.url; // guardar la URL real para usarla al procesar
 
       $.ajax({
