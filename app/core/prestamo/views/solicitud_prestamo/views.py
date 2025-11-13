@@ -1,18 +1,15 @@
 from datetime import datetime
 import json
-import math
 from django.template.loader import get_template
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
-from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
-from regex import template
+from django.views.generic import CreateView, DeleteView, UpdateView
 from weasyprint import HTML
 
 from core.base.models import Empresa
@@ -25,6 +22,7 @@ from core.prestamo.procedures import (
     sp_generar_proforma_cuota,
 )
 from core.security.mixins import PermissionMixin
+from typing import Any
 
 class SolicitudPrestamoList(PermissionRequiredMixin, BaseListView):
     """
@@ -79,7 +77,7 @@ class SolicitudPrestamoCreate(PermissionMixin,CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def validate_data(self):
-        data = {"valid": True}
+        data:dict[str,Any] = {"valid": True}
         try:
             type = self.request.POST["type"]
             obj = self.request.POST["obj"].strip()
@@ -91,7 +89,7 @@ class SolicitudPrestamoCreate(PermissionMixin,CreateView):
                 if SolicitudPrestamo.objects.filter(
                     Q(cliente_id=obj)
                     & Q(situacion_solicitud__estado__in=["INIC", "PEND"])
-                ):
+                ).exists():
                     data["valid"] = False
         except Exception as e:
             print(str(e))
@@ -100,23 +98,37 @@ class SolicitudPrestamoCreate(PermissionMixin,CreateView):
         return JsonResponse(data)
 
     def post(self, request, *args, **kwargs):
-        data = {}
-        action = request.POST["action"]
-        print(action)
+
+        data: dict[str, Any] = {}
+    def post(self, request, *args, **kwargs):
+
+        data: Any = {}
+        action = request.POST.get("action", "")
         try:
             if action == "add":
                 # RETORNA EL NRO. DE SOLICITUD GENERADA
-                data = sp_alta_solicitud_prestamo(request)
-                if data["rtn"] == 0:
-                    data["msg"] += "<br> NRO. DE SOLICITUD " + data["val"]
-                # CONCATENAMOS DICCIONARIO
-                # data.update(data_proc)
+                result = sp_alta_solicitud_prestamo(request)
+                if isinstance(result, dict):
+                    data = result
+                    if data.get("rtn") == 0:
+                        data["msg"] = (data.get("msg", "") or "") + "<br> NRO. DE SOLICITUD " + str(data.get("val", ""))
+                else:
+                    data = {"error": str(result)}
             elif action == "validate_data":
                 return self.validate_data()
             elif action == "search_proforma_cuota":
-                data = generar_proforma_cuota(request)
+                result = generar_proforma_cuota(request)
+                # generar_proforma_cuota may return a list of items or a dict with error
+                if isinstance(result, dict):
+                    data = result
+                else:
+                    data = {"items": result}
             elif action == "search_plazo_monto":
-                data = fn_monto_plazo_prestamo(request)
+                result = fn_monto_plazo_prestamo(request)
+                if isinstance(result, dict):
+                    data = result
+                else:
+                    data = {"result": result}
             else:
                 data["error"] = "No ha seleccionado ninguna opción"
         except Exception as e:
@@ -124,9 +136,6 @@ class SolicitudPrestamoCreate(PermissionMixin,CreateView):
         return HttpResponse(
             json.dumps(data, default=str), content_type="application/json"
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
         context["list_url"] = self.success_url
         context["title"] = "Nuevo registro de Solicitud de Préstamo"
         context["action"] = "add"
@@ -138,38 +147,47 @@ class SolicitudPrestamoUpdate(PermissionMixin, UpdateView):
     template_name = "solicitud_prestamo/create.html"
     form_class = SolicitudPrestamoForm
     success_url = reverse_lazy("solicitud_prestamo_list")
-    permission_required = "change_solicitudprestamo"
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        return super().dispatch(request, *args, **kwargs)
-
     def validate_data(self):
         data = {"valid": True}
         try:
             type = self.request.POST["type"]
             obj = self.request.POST["obj"].strip()
-            id = self.get_object().id
+            pk = getattr(self.get_object(), "pk", None)
             if type == "denominacion":
                 if SolicitudPrestamo.objects.filter(denominacion__iexact=obj).exclude(
-                    id=id
-                ):
+                    id=pk
+                ).exists():
                     data["valid"] = False
         except:
             pass
         return JsonResponse(data)
-
+                if SolicitudPrestamo.objects.filter(denominacion__iexact=obj).exclude(
     def post(self, request, *args, **kwargs):
-        data = {}
-        action = request.POST["action"]
+        data: Any = {}
+        action = request.POST.get("action", "")
         try:
             if action == "edit":
-                data = self.get_form().save()
-                data["rtn"] = 0
-                data["msg"] = "OK"
+                result = self.get_form().save()
+                # save() may return a dict or a model instance; normalize to a dict
+                if isinstance(result, dict):
+                    data = result
+                    data["rtn"] = data.get("rtn", 0)
+                    data["msg"] = data.get("msg", "OK")
+                else:
+                    data = {"rtn": 0, "msg": "OK"}
             elif action == "validate_data":
                 return self.validate_data()
+            elif action == "search_proforma_cuota":
+                result = generar_proforma_cuota(request)
+                if isinstance(result, dict):
+                    data = result
+                else:
+                    data = {"items": result}
+            else:
+                data["error"] = "No ha seleccionado ninguna opción"
+        except Exception as e:
+            data["error"] = str(e)
+        return HttpResponse(json.dumps(data), content_type="application/json")
             elif action == "search_proforma_cuota":
                 data = generar_proforma_cuota(request)
             else:
@@ -195,39 +213,39 @@ class SolicitudPrestamoDelete(PermissionMixin, DeleteView):
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        data = {}
-        try:
-            self.get_object().delete()
-        except Exception as e:
-            data["error"] = str(e)
-        return HttpResponse(json.dumps(data), content_type="application/json")
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Notificación de eliminación"
-        context["list_url"] = self.success_url
-        return context
-
-
 def generar_proforma_cuota(request):
     proforma = sp_generar_proforma_cuota(request)
-    print(proforma)
-    if proforma["rtn"] == 0:
-        data = []
-        nro_solicitud = (
-            request.POST["nro_solicitud"] if request.POST["nro_solicitud"] else None
-        )
-        # print("*" * 100)
-        # print(nro_solicitud)
-        # print("*" * 100)
+    # If the procedure returns a dict with rtn == 0 proceed, otherwise return a dict with error
+    if isinstance(proforma, dict) and proforma.get("rtn") == 0:
+        data_list = []
+        nro_solicitud = request.POST.get("nro_solicitud") or None
         search = ProformaCuota.objects.filter(
             Q(solicitud_prestamo=nro_solicitud) & Q(usu_insercion=request.user.cod_usuario)
         )
-        total_interes = 0
-        monto_prestamo = 0
-        monto_refinanciado = 0  # Acá debemos recuperar el total del monto refinanciado
+        total_interes = 0.0
+        monto_prestamo = 0.0
+        monto_refinanciado = 0.0  # Acá debemos recuperar el total del monto refinanciado
+        for p in search:
+            item = p.toJSON()
+            try:
+                total_interes += float(item.get("interes", 0))
+            except Exception:
+                pass
+            try:
+                monto_prestamo += float(item.get("amortizacion", 0))
+            except Exception:
+                pass
+            data_list.append(item)
+        # RETORNAMOS LOS TOTALES EN LA PRIMERA FILA SI HAY FILAS
+        if data_list:
+            data_list[0]["monto_prestamo"] = monto_prestamo
+            data_list[0]["monto_refinanciado"] = monto_refinanciado
+            data_list[0]["monto_neto"] = monto_prestamo - monto_refinanciado
+            data_list[0]["total_interes"] = total_interes
+        return data_list
+    else:
+        msg = proforma.get("msg") if isinstance(proforma, dict) else str(proforma)
+        return {"error": str(msg)}
         monto_neto = 0  # Diferencia entre monto_prestamo - monto_refinanciado
         for p in search:
             item = p.toJSON()

@@ -9,3 +9,4 @@ app/deploy/start_bascula.bat
 *.pdf
 *.xls
 *.xlsx
+app/.vscode/settings.json

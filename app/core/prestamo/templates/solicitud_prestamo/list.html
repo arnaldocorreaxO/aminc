@@ -1,32 +1,22 @@
-{% extends 'list.html' %}
+{% extends "list.html" %}
 {% load static %}
 {% block head_list %}
-<script src="{% static 'solicitud_prestamo/js/list.js' %}"></script>
-<!-- DESHABILITAR BOTON DE APROBACION DE SOCIO| -->
-<style>
+    <script src="{% static 'solicitud_prestamo/js/list.js' %}"></script>
+    <!-- DESHABILITAR BOTON DE APROBACION DE SOCIO| -->
+    <style>
     .disabled_aprobar {
         pointer-events: none;
         cursor: default;
     }
-</style>
-{% endblock %}
-
+    </style>
+{% endblock head_list %}
 {% block columns %}
-<th scope="col">Nro. Solicitud</th>
-<th scope="col">Fecha Solicitud</th>
-<th scope="col">Monto Solicitado</th>
-<th scope="col">Socio</th>
-<th scope="col">Telefono</th>
-<th scope="col">Fecha Aprobacion</th>
-<th scope="col">Estado</th>
-<th scope="col" class="text-center">Opciones</th>
-
-<!-- <th scope="col" style="width: 10%;">Nro. Solicitud</th>
-<th scope="col" style="width: 10%;">Fecha Solicitud</th>
-<th scope="col" style="width: 45%;">Socio</th>
-<th scope="col" style="width: 20%;">Telefono</th>
-<th scope="col" style="width: 10%;">Fecha Aprobacion</th>
-<th scope="col" style="width: 20%;">Estado</th>
-<th scope="col" style="width: 15%;" class="text-center">Opciones</th> -->
-
-{% endblock %}
+    <th scope="col">Nro. Solicitud</th>
+    <th scope="col">Fecha Solicitud</th>
+    <th scope="col">Monto Solicitado</th>
+    <th scope="col">Socio</th>
+    <th scope="col">Telefono</th>
+    <th scope="col">Fecha Aprobacion</th>
+    <th scope="col">Estado</th>
+    <th scope="col" class="text-center">Opciones</th>
+{% endblock columns %}
